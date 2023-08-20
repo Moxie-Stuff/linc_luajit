@@ -562,54 +562,38 @@ class Lua_helper {
 
 	}
 
+	public static var sendErrorsToLua:Bool = true;
 	public static inline function callback_handler(l:State, fname:String):Int {
+		try{
 
-		var cbf = callbacks.get(fname);
+			var cbf = callbacks.get(fname);
 
-		if(cbf == null) {
-			return 0;
+			if(cbf == null) return 0;
+
+			var nparams:Int = Lua.gettop(l);
+			var args:Array<Dynamic> = [];
+
+			for (i in 0...nparams) {
+				args[i] = Convert.fromLua(l, i + 1);
+			}
+
+			var ret:Dynamic = null;
+			/* return the number of results */
+
+			ret = Reflect.callMethod(null,cbf,args);
+
+			if(ret != null){
+				Convert.toLua(l, ret);
+				return 1;
+			}
+		}catch(e:Dynamic){
+			if(sendErrorsToLua) {LuaL.error(l, 'CALLBACK ERROR! ${if(e.message != null) e.message else e}');return 0;}
+			trace(e);
+			throw(e);
 		}
+		return 0;
 
-		var nparams:Int = Lua.gettop(l);
-		var args:Array<Dynamic> = [];
-
-		for (i in 0...nparams) {
-			args[i] = Convert.fromLua(l, i + 1);
-		}
-
-		var ret:Dynamic = null;
-
-		switch (nparams) {
-			case 0:
-				ret = cbf();
-			case 1:
-				ret = cbf(args[0]);
-			case 2:
-				ret = cbf(args[0], args[1]);
-			case 3:
-				ret = cbf(args[0], args[1], args[2]);
-			case 4:
-				ret = cbf(args[0], args[1], args[2], args[3]);
-			case 5:
-				ret = cbf(args[0], args[1], args[2], args[3], args[4]);
-			case 6:
-				ret = cbf(args[0], args[1], args[2], args[3], args[4], args[5]);
-			case 7:
-				ret = cbf(args[0], args[1], args[2], args[3], args[4], args[5], args[6]);
-			case 8:
-				ret = cbf(args[0], args[1], args[2], args[3], args[4], args[5], args[6], args[7]);
-			default:
-				throw("> 5 arguments is not supported");
-		}
-
-		if(ret != null){
-			Convert.toLua(l, ret);
-		}
-
-		/* return the number of results */
-		return 1;
-
-	} //callback_handler
+	} 
 
 }
 
