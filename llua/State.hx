@@ -8,7 +8,7 @@ extern class State {}
 @:native('lua_State')
 extern class Lua_State {}
 
-typedef StatePointer = cpp.RawPointer<Lua_State>;
+#if !hl typedef StatePointer = cpp.RawPointer<Lua_State>; #end
 #end
 
 // @:native("lua_State")
